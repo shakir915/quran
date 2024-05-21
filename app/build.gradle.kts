@@ -29,8 +29,8 @@ android {
         applicationId = "quran.shakir.kadakkadan"
         minSdk = 24
         targetSdk = 34
-        versionCode = 5
-        versionName = "1.0.1"
+        versionCode = 7
+        versionName = "1.0.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -91,7 +91,7 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
-   // implementation("com.arthenica:ffmpeg-kit-full:6.0-2")
+    implementation("com.arthenica:ffmpeg-kit-full:6.0-2")
 
 
 

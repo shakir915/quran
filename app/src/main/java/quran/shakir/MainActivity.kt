@@ -58,8 +58,8 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.lifecycle.lifecycleScope
-//import com.arthenica.ffmpegkit.FFmpegKit
-//import com.arthenica.ffmpegkit.ReturnCode
+import com.arthenica.ffmpegkit.FFmpegKit
+import com.arthenica.ffmpegkit.ReturnCode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -484,19 +484,19 @@ class VersActivty : ComponentActivity() {
 
 
 
-//                                Image(
-//                                    painter = painterResource(id = R.drawable.baseline_video_library_24),
-//                                    contentDescription = "Create Video",
-////                                    textAlign = TextAlign.Right,
-//                                    modifier = Modifier
-//                                        .padding(12.dp)
-//                                        .clickable {
-//
-//                                            permission()
-//
-//                                        },
-////                                    fontFamily = kfgqpc_uthmanic_script_hafs_regular,
-//                                )
+                                Image(
+                                    painter = painterResource(id = R.drawable.baseline_video_library_24),
+                                    contentDescription = "Create Video",
+//                                    textAlign = TextAlign.Right,
+                                    modifier = Modifier
+                                        .padding(12.dp)
+                                        .clickable {
+
+                                            permission()
+
+                                        },
+//                                    fontFamily = kfgqpc_uthmanic_script_hafs_regular,
+                                )
 
 
                                 Image(
@@ -639,108 +639,108 @@ class VersActivty : ComponentActivity() {
 
     }
 
-//    fun permission() {
-//        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
-//            != PackageManager.PERMISSION_GRANTED
-//        ) {
-//
-//            ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE), 6363)
-//        } else {
-//            video()
-//        }
-//    }
-//
-//    private fun video() {
-//
-//        val font=File(filesDir, "font.ttf")
-//        copyUriToFile(this@VersActivty, Uri.parse("android.resource://${BuildConfig.APPLICATION_ID}/" + R.font.roboto_medium),font )
-//        val file = File(filesDir, "output.mp4").apply {
-//            if (exists()) delete()
-//        }
-//
-//
-//        println("font.length() ${font.length()}")
-//
-//        val session = FFmpegKit.execute(
-//            " -f lavfi -t 60 -i color=size=320x240:rate=25:color=blue -vf \"drawtext=fontfile=${
-//                font.path
-//            }:fontsize=30:fontcolor=white:x=(w-text_w)/2:y=(h-text_h)/2:text='أعوذُ بِٱللَّهِ مِنَ ٱلشَّيۡطَٰنِ ٱلرَّجِيم'\" -c:a copy ${file.path}"
-//        )
-//        if (ReturnCode.isSuccess(session.returnCode)) {
-//            println("MainActivity : video() called isSuccess ${session.returnCode}")
-//            // SUCCESS
-//        } else if (ReturnCode.isCancel(session.returnCode)) {
-//            println("MainActivity : video() called isCancel ${session.returnCode}")
-//
-//            // CANCEL
-//        } else {
-//            println("MainActivity : video() called else ${session.returnCode}")
-//            // FAILURE
-//            android.util.Log.d("TAG", String.format("Command failed with state %s and rc %s.%s", session.state, session.returnCode, session.failStackTrace))
-//        }
-//        //file.renameTo(File(file.parent, System.currentTimeMillis().toString() + "." + file.extension))
-//        saveVideoToGallery(file)
-//
-//
-//    }
-//
-//    private fun saveVideoToGallery(videoFile: File) {
-//
-//        try {
-//            val contentResolver = contentResolver
-//            val videoValues = ContentValues().apply {
-//                put(MediaStore.Video.Media.DATA, videoFile.absolutePath)
-//                put(MediaStore.Video.Media.MIME_TYPE, "video/mp4") // Replace with appropriate MIME type if needed
-//                // Add other metadata like title, description, etc. (optional)
-//            }
-//
-//            val contentUri = contentResolver.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, videoValues)
-//
-//            if (contentUri != null) {
-//                // Success! Video saved to gallery
-//                // You can optionally show a toast or notification to the user
-//            } else {
-//                // Error saving video
-//                // Handle the error appropriately
-//            }
-//        } catch (e: Exception) {
-//           e.printStackTrace()
-//
-//            Toast.makeText(this, "${videoFile.length().div(1000)} ${videoFile.path} ", Toast.LENGTH_SHORT).show()
-//
-//            val videoUri = FileProvider.getUriForFile(this, "${BuildConfig.APPLICATION_ID}.provider", videoFile)
-//            val intent = Intent(Intent.ACTION_SEND)
-//            intent.type = "video/*" // Set MIME type for video
-//            intent.putExtra(Intent.EXTRA_STREAM, videoUri)
-//            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-//            startActivity(Intent.createChooser(intent, "Share Video"))
-//
-//
-//
-//        }
-//    }
-//
-//    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
-//        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-//        video()
-//    }
-//
-//    fun copyUriToFile(context: Context, uri: Uri, destinationFile: File) {
-//        val contentResolver = context.contentResolver
-//        contentResolver.openInputStream(uri)?.use { inputStream ->
-//            val outputStream = FileOutputStream(destinationFile)
-//            try {
-//                val buffer = ByteArray(1024)
-//                var bytesRead: Int
-//                while (inputStream.read(buffer).also { bytesRead = it } != -1) {
-//                    outputStream.write(buffer, 0, bytesRead)
-//                }
-//                outputStream.flush()
-//            } finally {
-//                outputStream.close()
-//            }
-//        }
-//    }
+    fun permission() {
+        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+
+            ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE), 6363)
+        } else {
+            video()
+        }
+    }
+
+    private fun video() {
+
+        val font=File(filesDir, "font.ttf")
+        copyUriToFile(this@VersActivty, Uri.parse("android.resource://${BuildConfig.APPLICATION_ID}/" + R.font.roboto_medium),font )
+        val file = File(filesDir, "output.mp4").apply {
+            if (exists()) delete()
+        }
+
+
+        println("font.length() ${font.length()}")
+
+        val session = FFmpegKit.execute(
+            " -f lavfi -t 60 -i color=size=320x240:rate=25:color=blue -vf \"drawtext=fontfile=${
+                font.path
+            }:fontsize=30:fontcolor=white:x=(w-text_w)/2:y=(h-text_h)/2:text='أعوذُ بِٱللَّهِ مِنَ ٱلشَّيۡطَٰنِ ٱلرَّجِيم'\" -c:a copy ${file.path}"
+        )
+        if (ReturnCode.isSuccess(session.returnCode)) {
+            println("MainActivity : video() called isSuccess ${session.returnCode}")
+            // SUCCESS
+        } else if (ReturnCode.isCancel(session.returnCode)) {
+            println("MainActivity : video() called isCancel ${session.returnCode}")
+
+            // CANCEL
+        } else {
+            println("MainActivity : video() called else ${session.returnCode}")
+            // FAILURE
+            android.util.Log.d("TAG", String.format("Command failed with state %s and rc %s.%s", session.state, session.returnCode, session.failStackTrace))
+        }
+        //file.renameTo(File(file.parent, System.currentTimeMillis().toString() + "." + file.extension))
+        saveVideoToGallery(file)
+
+
+    }
+
+    private fun saveVideoToGallery(videoFile: File) {
+
+        try {
+            val contentResolver = contentResolver
+            val videoValues = ContentValues().apply {
+                put(MediaStore.Video.Media.DATA, videoFile.absolutePath)
+                put(MediaStore.Video.Media.MIME_TYPE, "video/mp4") // Replace with appropriate MIME type if needed
+                // Add other metadata like title, description, etc. (optional)
+            }
+
+            val contentUri = contentResolver.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, videoValues)
+
+            if (contentUri != null) {
+                // Success! Video saved to gallery
+                // You can optionally show a toast or notification to the user
+            } else {
+                // Error saving video
+                // Handle the error appropriately
+            }
+        } catch (e: Exception) {
+           e.printStackTrace()
+
+            Toast.makeText(this, "${videoFile.length().div(1000)} ${videoFile.path} ", Toast.LENGTH_SHORT).show()
+
+            val videoUri = FileProvider.getUriForFile(this, "${BuildConfig.APPLICATION_ID}.provider", videoFile)
+            val intent = Intent(Intent.ACTION_SEND)
+            intent.type = "video/*" // Set MIME type for video
+            intent.putExtra(Intent.EXTRA_STREAM, videoUri)
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            startActivity(Intent.createChooser(intent, "Share Video"))
+
+
+
+        }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        video()
+    }
+
+    fun copyUriToFile(context: Context, uri: Uri, destinationFile: File) {
+        val contentResolver = context.contentResolver
+        contentResolver.openInputStream(uri)?.use { inputStream ->
+            val outputStream = FileOutputStream(destinationFile)
+            try {
+                val buffer = ByteArray(1024)
+                var bytesRead: Int
+                while (inputStream.read(buffer).also { bytesRead = it } != -1) {
+                    outputStream.write(buffer, 0, bytesRead)
+                }
+                outputStream.flush()
+            } finally {
+                outputStream.close()
+            }
+        }
+    }
 }
 
 
