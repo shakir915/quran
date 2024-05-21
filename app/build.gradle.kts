@@ -65,6 +65,7 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+//    dynamicFeatures += setOf(":dynamicfeature")
 }
 
 dependencies {
@@ -72,8 +73,8 @@ dependencies {
 
 
 
-    implementation("androidx.core:core-ktx:1.9.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
+    implementation("androidx.core:core-ktx:1.13.1")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.0")
     implementation("androidx.activity:activity-compose:1.9.0")
     implementation("com.google.accompanist:accompanist-flowlayout:0.35.1-alpha")
     implementation(platform("androidx.compose:compose-bom:2024.05.00"))
@@ -89,6 +90,10 @@ dependencies {
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
+
+   // implementation("com.arthenica:ffmpeg-kit-full:6.0-2")
+
+
 
 
 }

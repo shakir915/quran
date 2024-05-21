@@ -10,8 +10,10 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+
     }
 }
 
 rootProject.name = "Quran"
 include(":app")
+//include(":dynamicfeature")
