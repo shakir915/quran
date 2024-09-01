@@ -8,6 +8,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.provider.CalendarContract.Colors
 import android.provider.MediaStore
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
@@ -21,18 +22,27 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.selection.LocalTextSelectionColors
+import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -53,13 +63,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -109,6 +122,8 @@ class MainActivity : ComponentActivity() {
 
 
             val showList = arrayListOf<String>()
+            val showListSuperArabic = arrayListOf<String>()
+            val showListSuperTrans = arrayListOf<String>()
             val chaptersList = arrayListOf<String>()
             val englishList = arrayListOf<String>()
             withContext(Dispatchers.IO) {
@@ -141,58 +156,170 @@ class MainActivity : ComponentActivity() {
 
             }
 
+            val nf: NumberFormat = NumberFormat.getInstance(Locale.forLanguageTag("ar"))
+            val kfgqpc_uthmanic_script_hafs_regular = FontFamily(
+                Font(R.font.kfgqpc_uthmanic_script_hafs_regular, FontWeight.Medium),
+
+                )
+
+
+
 
 
             setContent {
 
-                val focusManager = LocalFocusManager.current
 
+
+                val focusManager = LocalFocusManager.current
+                val customTextSelectionColors = TextSelectionColors(
+                    handleColor = Color.Cyan,
+                    backgroundColor = Color.Cyan
+                )
 
 
                 val scope = rememberCoroutineScope()
 
                 var searchText by remember { mutableStateOf("") }
+                var searchResultCountText by remember { mutableStateOf("Showing 114 Chapters") }
                 var refresh by remember { mutableStateOf(0) }
                 var superSearch by remember { mutableStateOf(false) }
 
 
                 fun searchAyath() {
-
-                    focusManager.clearFocus()
-                    val nnn = ayaths.mapIndexed { index, s ->
-                        if (removeThashkeel(s).contains(searchText, ignoreCase = true))
-                            index
-                        else
-                            -1
-                    }
-                        .plus(
-                            ayathsTrans.mapIndexed { index, s ->
-                                if ((s).contains(searchText, ignoreCase = true))
+                    searchResultCountText= "Searching..."
+                    scope.launch {
+                        showList.clear()
+                        showListSuperArabic.clear()
+                        showListSuperTrans.clear()
+                        superSearch=true
+                        focusManager.clearFocus()
+                        val searchText=searchText.trim()
+                        refresh++
+                        withContext(Dispatchers.IO){
+                            val nnn = ayaths.mapIndexed { index, s ->
+                                if (removeThashkeel(s).contains(searchText, ignoreCase = true))
                                     index
                                 else
                                     -1
                             }
-                        )
-                        .filter { it != -1 }
-                        .distinct()
+                                .plus(
+                                    ayathsTrans.mapIndexed { index, s ->
+                                        if ((s).contains(searchText, ignoreCase = true))
+                                            index
+                                        else
+                                            -1
+                                    }
+                                )
+                                .filter { it != -1 }
+                                .distinct()
 
 
 
 
-                    showList.clear()
-                    showList.addAll(
-                        nnn.map {
-                            chaptersList.get(suraNumber.get(it).toInt()-1)+" " +suraNumber.get(it) + ":" + ayathNumber.get(it) + "\n\n" + ayaths.get(it) + "\n\n" + ayathsTrans.get(
-                                it
+
+                            showList.addAll(
+                                nnn.map {
+                                    suraNumber.get(it) + ":" + ayathNumber.get(it)+" "+
+                                            chaptersList.get(suraNumber.get(it).toInt()-1)
+
+                                }
+
                             )
+
+                            showListSuperArabic.addAll(
+                                nnn.map {
+                                    ayaths.get(it)
+                                }
+                            )
+                             showListSuperTrans.addAll(
+                                nnn.map {
+                                    ayathsTrans.get(it)
+                                }
+                            )
+
+
+
                         }
+                        searchResultCountText= "${showList.size} Search results for \"$searchText\""
+                        refresh++
+                    }
 
-                    )
-                    superSearch=true
-
-                    refresh++
 
                 }
+
+                fun  searchSura(){
+
+                    superSearch = false
+                    val searchText=searchText.trim()
+                    if (searchText.isBlank()) {
+                        showList.clear()
+                        showList.addAll(chaptersList)
+                        searchResultCountText="Showing 114 Chapters"
+                    } else {
+                        showList.clear()
+
+
+
+
+
+
+                        showList.addAll(chaptersList.filter {
+                            removeThashkeel(it)
+                                .startsWith(
+                                    searchText,
+                                    ignoreCase = true
+                                )
+                        }.plus(
+                            chaptersList.filter {
+                                removeThashkeel(it)
+                                    .contains(
+                                        searchText,
+                                        ignoreCase = true
+                                    )
+                            }
+                        )
+                            .plus(
+                                englishList
+                                    .filter {
+                                        it.startsWith(
+                                            searchText,
+                                            ignoreCase = true
+                                        )
+                                    }
+                                    .map {
+                                        englishList.indexOf(it)
+                                    }
+                                    .map {
+                                        chaptersList.get(it)
+                                    }
+                            )
+                            .plus(
+                                englishList
+                                    .filter {
+                                        it.contains(
+                                            searchText,
+                                            ignoreCase = true
+                                        )
+                                    }
+                                    .distinct()
+                                    .map {
+                                        englishList.indexOf(it)
+                                    }
+                                    .map {
+                                        chaptersList.get(it)
+                                    }
+                            )
+
+
+                            .distinct())
+                        searchResultCountText="Showing Search Result : ${showList.size} Chapters"
+                    }
+
+
+                    refresh++
+                }
+
+
 
 
 
@@ -200,118 +327,116 @@ class MainActivity : ComponentActivity() {
                     // A surface container using the 'background' color from the theme
                     Surface(modifier = Modifier.fillMaxSize(), color = Color(0xFF121316)) {
                         Column {
-                            Row {
+                            Row(modifier = Modifier.height(56.dp)) {
 
 
-                                TextField(
+                                Box(
                                     modifier = Modifier
+                                        .padding(8.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(color = Color.White.copy(alpha = .1f))
+                                        .align(alignment = Alignment.CenterVertically)
                                         .weight(1f),
-                                    value = searchText,
-                                    maxLines = 1,
-                                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                                    leadingIcon = {
+                                ) {
+                                    Row(modifier = Modifier.align(Alignment.Center)) {
+
                                         Icon(
-                                            Icons.Default.Search,
-                                            contentDescription = "Search icon"
-                                        )
-                                    },
-                                    keyboardActions = KeyboardActions {
-                                        searchAyath()
-                                    },
-                                    onValueChange = { newText ->
-                                        superSearch=false
-                                        searchText = newText
-                                        if (newText.isBlank()) {
-                                            showList.clear()
-                                            showList.addAll(chaptersList)
-                                        } else {
-                                            showList.clear()
 
-
-
-
-
-
-                                            showList.addAll(chaptersList.filter {
-                                                removeThashkeel(it)
-                                                    .startsWith(newText, ignoreCase = true)
-                                            }.plus(
-                                                chaptersList.filter {
-                                                    removeThashkeel(it)
-                                                        .contains(newText, ignoreCase = true)
-                                                }
+                                                Icons.Default.Search,
+                                                contentDescription = "Search icon",
+                                            modifier = Modifier
+                                                .padding(start = 8.dp,)
+                                                .align(alignment = Alignment.CenterVertically)
                                             )
-                                                .plus(
-                                                    englishList
-                                                        .filter {
-                                                            it.startsWith(
-                                                                newText,
-                                                                ignoreCase = true
-                                                            )
-                                                        }
-                                                        .map {
-                                                            englishList.indexOf(it)
-                                                        }
-                                                        .map {
-                                                            chaptersList.get(it)
-                                                        }
-                                                )
-                                                .plus(
-                                                    englishList
-                                                        .filter {
-                                                            it.contains(
-                                                                newText,
-                                                                ignoreCase = true
-                                                            )
-                                                        }
-                                                        .distinct()
-                                                        .map {
-                                                            englishList.indexOf(it)
-                                                        }
-                                                        .map {
-                                                            chaptersList.get(it)
-                                                        }
-                                                )
+                                        CompositionLocalProvider(LocalTextSelectionColors provides customTextSelectionColors)
+                                        {
+                                            BasicTextField(
+                                                cursorBrush = SolidColor(Color.Cyan),
+                                                textStyle = TextStyle(
+                                                    color = Color.White,
+                                                    textAlign = TextAlign.Start,
+                                                ),
+                                                modifier = Modifier
+                                                    .align(alignment = Alignment.CenterVertically)
+                                                    .fillMaxHeight()
+                                                    .fillMaxWidth()
+                                                    .wrapContentHeight(align = Alignment.CenterVertically)
+                                                    .padding(start = 8.dp, end = 8.dp),
+                                                maxLines = 1,
+                                                keyboardActions = KeyboardActions {
+                                                    searchAyath()
+                                                },
 
-
-                                                .distinct())
+                                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                                                value = searchText,
+                                                onValueChange = { newText ->
+                                                    searchText=newText
+                                                    searchSura()
+                                                })
                                         }
+                                    }
 
 
-                                    },
-                                    colors = TextFieldDefaults.textFieldColors(
-                                        containerColor = Color.Transparent
-                                    )
-//
-                                )
-                                Text(
-                                    "Search\nAya",
-                                    fontSize = 8.sp,
+
+                                }
+                                Box(
                                     modifier = Modifier
-                                        .padding(12.dp)
                                         .clickable {
                                             searchAyath()
-                                        }, color = Color.White
-                                )
+                                        }
+                                        .align(alignment = Alignment.CenterVertically)
+                                        .padding(8.dp)
+                                        .fillMaxHeight()
+                                        .clip(RoundedCornerShape(8.dp)) // Adjust the corner radius as needed
+                                        .background(color = Color.White.copy(alpha = .1f))
+                                ) {
+                                    Text(
+                                        "Search\nAya(Arabic) /\ntranslation",
+                                        fontSize = 8.sp,
+                                        textAlign = TextAlign.Center,
+                                        lineHeight = 10.sp,
+                                        modifier = Modifier
+                                            .align(Alignment.Center)
+                                            .padding(start = 8.dp, end = 8.dp),
+                                        color = Color.White
+                                    )
+                                }
 
                                 Image(
                                     painter = painterResource(id = R.drawable.baseline_share_24),
                                     contentDescription = "Share Clipboard Content",
 //                                    textAlign = TextAlign.Right,
                                     modifier = Modifier
+                                        .align(alignment = Alignment.CenterVertically)
                                         .padding(12.dp)
-                                        .alpha(if (superSearch) 1f else 0f)
+                                        .alpha(if (superSearch) 1f else .2f)
                                         .clickable {
                                             scope.launch {
-                                                var s = showList.joinToString("\n")
-                                                val sendIntent = Intent()
-                                                sendIntent.action = Intent.ACTION_SEND
-                                                sendIntent.putExtra(Intent.EXTRA_TEXT, s)
-                                                sendIntent.type = "text/plain"
+                                                try {
+                                                    var s =
+                                                        showList
+                                                            .mapIndexed { index, s ->
+                                                                showList.get(index) + "\n\n" +
+                                                                        showListSuperArabic.get(
+                                                                            index
+                                                                        ) + "\n\n" +
+                                                                        showListSuperTrans.get(index) + ""
+                                                            }
+                                                            .joinToString("\n\n\n")
 
-                                                val shareIntent =
-                                                    Intent.createChooser(sendIntent, null)
-                                                startActivity(shareIntent)
+                                                    val sendIntent = Intent()
+                                                    sendIntent.action = Intent.ACTION_SEND
+                                                    sendIntent.putExtra(Intent.EXTRA_TEXT, s)
+                                                    sendIntent.type = "text/plain"
+
+                                                    val shareIntent =
+                                                        Intent.createChooser(sendIntent, null)
+                                                    startActivity(shareIntent)
+                                                } catch (e: Exception) {
+                                                    Toast
+                                                        .makeText(this@MainActivity, "${e.message}", Toast.LENGTH_SHORT)
+                                                        .show()
+                                                }
 
                                             }
 
@@ -322,50 +447,118 @@ class MainActivity : ComponentActivity() {
 
 
                             }
+
+
+                            Text(
+                                searchResultCountText,
+                                modifier = Modifier.padding(start = 8.dp,end = 8.dp),
+                                fontSize = 10.sp,
+                                color =  Color.White
+                            )
                             refresh.let {
+
+                                if (superSearch)
+                                LazyColumn(modifier = Modifier) {
+                                    items(showList.size) { index ->
+                                        Column(
+                                            modifier = Modifier.clickable {
+                                                startActivity(
+                                                    Intent(
+                                                        this@MainActivity,
+                                                        VersActivty::class.java
+                                                    ).apply {
+
+
+                                                        putExtra(
+                                                            "chapterNumber",
+                                                            suraNumber.get(index).toInt()
+
+                                                        )
+
+                                                        putExtra(
+                                                            "ScrollToAyaNumber",
+                                                            ayathNumber.get(index).toInt()
+                                                        )
+
+                                                        putExtra(
+                                                            "chapterName",
+                                                            chaptersList.get( suraNumber.get(index).toInt()-1)
+                                                        )
+                                                    })
+                                            }
+
+                                        ) {
+                                            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                                                Text(
+                                                    showList.get(index),
+                                                    modifier = Modifier.padding(8.dp),
+                                                    color = Color.White
+                                                )
+                                            }
+                                            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                                                Text(
+                                                    text = showListSuperArabic.get(index),
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .padding(8.dp)
+                                                        .align(Alignment.End),
+                                                    fontFamily = kfgqpc_uthmanic_script_hafs_regular,
+                                                    fontSize = 20.sp,
+                                                    color = Color.White
+
+
+                                                )
+                                            }
+                                            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                                                Text(
+                                                    showListSuperTrans.get(index),
+                                                    modifier = Modifier.padding(8.dp),
+                                                    color = Color.White
+                                                )
+                                            }
+
+                                            Box(
+                                                modifier = Modifier.padding(16.dp),
+                                            ) {
+
+                                            }
+
+                                        }
+
+
+                                    }
+                                }
+
+
+                                else
                                 LazyColumn(modifier = Modifier) {
                                     items(showList.size) { index ->
                                         Row(modifier = Modifier
                                             .defaultMinSize(minWidth = 150.dp)
                                             .clickable {
                                                 if (!superSearch)
-                                                startActivity(
-                                                    Intent(
-                                                        this@MainActivity,
-                                                        VersActivty::class.java
-                                                    ).apply {
-                                                        putExtra("chapterNumber", chaptersList.indexOf( showList.get(index))+1)
-                                                        putExtra(
-                                                            "chapterName",
-                                                            showList.get(index)
-                                                        )
-                                                    })
-
-
-                                                else
                                                     startActivity(
                                                         Intent(
                                                             this@MainActivity,
                                                             VersActivty::class.java
                                                         ).apply {
-                                                            putExtra("chapterNumber",
-                                                                showList.get(index).split(" ")[1].split(":")[0].toInt())
-
-                                                            putExtra("ScrollToAyaNumber",
-                                                                showList.get(index).split(" ")[1].split(":")[1].split("\n\n")[0].toInt())
-
-
-
+                                                            putExtra(
+                                                                "chapterNumber",
+                                                                chaptersList.indexOf(
+                                                                    showList.get(index)
+                                                                ) + 1
+                                                            )
                                                             putExtra(
                                                                 "chapterName",
-                                                                showList.get(index).split(" ")[0]
+                                                                showList.get(index)
                                                             )
                                                         })
 
 
 
-
                                             }) {
+
+
                                             Text(
                                                 if (!superSearch) (chaptersList.indexOf( showList.get(index))+1).toString() else " ",
                                                 modifier = Modifier.padding(8.dp),
@@ -411,6 +604,9 @@ class MainActivity : ComponentActivity() {
 
 
     }
+
+
+
 
 }
 
