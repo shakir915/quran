@@ -6234,13 +6234,3 @@
 114|4|ദുര്‍ബോധനം നടത്തി പിന്‍മാറിക്കളയുന്നവരെക്കൊണ്ടുള്ള കെടുതിയില്‍ നിന്ന്‌
 114|5|മനുഷ്യരുടെ ഹൃദയങ്ങളില്‍ ദുര്‍ബോധനം നടത്തുന്നവര്‍
 114|6|മനുഷ്യരിലും ജിന്നുകളിലും പെട്ടവര്‍
-{
-    "name": "mal-cheriyamundamab",
-    "author": "Cheriyamundam Abdul Hameed And Kunhi Mohammed Parappoor",
-    "language": "Malayalam",
-    "direction": "ltr",
-    "source": "http://tanzil.net",
-    "comments": "",
-    "link": "https://cdn.jsdelivr.net/gh/fawazahmed0/quran-api@1/editions/mal-cheriyamundamab.json",
-    "linkmin": "https://cdn.jsdelivr.net/gh/fawazahmed0/quran-api@1/editions/mal-cheriyamundamab.min.json"
-}

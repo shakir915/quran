@@ -6234,13 +6234,3 @@
 114|4|مِن شَرِّ ٱلۡوَسۡوَاسِ ٱلۡخَنَّاسِ
 114|5|ٱلَّذِي يُوَسۡوِسُ فِي صُدُورِ ٱلنَّاسِ
 114|6|مِنَ ٱلۡجِنَّةِ وَٱلنَّاسِ
-{
-    "name": "ara-quranuthmanihaf",
-    "author": "Quran Uthmani Hafs",
-    "language": "Arabic",
-    "direction": "rtl",
-    "source": "https://qurancomplex.gov.sa/",
-    "comments": "Version 13",
-    "link": "https://cdn.jsdelivr.net/gh/fawazahmed0/quran-api@1/editions/ara-quranuthmani.json",
-    "linkmin": "https://cdn.jsdelivr.net/gh/fawazahmed0/quran-api@1/editions/ara-quranuthmani.min.json"
-}

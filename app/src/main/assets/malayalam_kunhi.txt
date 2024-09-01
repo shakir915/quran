@@ -6234,8 +6234,3 @@
 ദുര്‍ബോധനം നടത്തി പിന്‍മാറിക്കളയുന്നവരെക്കൊണ്ടുള്ള കെടുതിയില്‍ നിന്ന്‌.
 മനുഷ്യരുടെ ഹൃദയങ്ങളില്‍ ദുര്‍ബോധനം നടത്തുന്നവര്‍.
 മനുഷ്യരിലും ജിന്നുകളിലും പെട്ടവര്‍.
-{
-    "language": "malayalam",
-    "author": "Abdul Hameed Madani and Kunhi Mohammed",
-	"source":"https://qurancomplex.gov.sa/"
-}
