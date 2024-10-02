@@ -34,6 +34,10 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.times
 import quran.shakir.ui.theme.QuranTheme
 
+
+
+//https://github.com/GovarJabbar/Quran-PNG
+
 class SettingsActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

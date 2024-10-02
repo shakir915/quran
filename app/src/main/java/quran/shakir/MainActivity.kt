@@ -63,6 +63,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.lifecycleScope
@@ -378,6 +379,7 @@ class MainActivity : ComponentActivity() {
                                     )
                                 }
 
+                                if(superSearch)
                                 Image(
                                     painter = painterResource(id = R.drawable.baseline_share_24),
                                     contentDescription = "Share Clipboard Content",
@@ -452,7 +454,7 @@ class MainActivity : ComponentActivity() {
                             refresh.let {
 
                                 if (superSearch)
-                                    LazyColumn(modifier = Modifier) {
+                                    LazyColumn(modifier = Modifier.fillMaxSize()) {
                                         items(showList.size) { index ->
                                             Column(
                                                 modifier = Modifier.clickable {
@@ -504,8 +506,11 @@ class MainActivity : ComponentActivity() {
                                                             .padding(8.dp)
                                                             .align(Alignment.End),
                                                         fontFamily = kfgqpc_uthmanic_script_hafs_regular,
-                                                        fontSize = 20.sp,
-                                                        color = Color.White
+                                                        fontSize = pref.getInt("font_size_arabic",16).sp,
+                                                        color = Color.White,
+                                                        lineHeight = 1.4.em,
+
+
 
 
                                                     )
@@ -514,7 +519,9 @@ class MainActivity : ComponentActivity() {
                                                     Text(
                                                         showListSuperTrans.get(index),
                                                         modifier = Modifier.padding(8.dp),
-                                                        color = Color.White
+                                                        color = Color.White,
+                                                        fontSize = pref.getInt("font_size_malayalam",16).sp,
+                                                        lineHeight = 1.4.em,
                                                     )
                                                 }
 
@@ -530,7 +537,7 @@ class MainActivity : ComponentActivity() {
                                         }
                                     }
                                 else
-                                    LazyColumn(modifier = Modifier) {
+                                    LazyColumn(modifier = Modifier.fillMaxSize()) {
                                         items(showList.size) { index ->
                                             Row(modifier = Modifier
                                                 .defaultMinSize(minWidth = 150.dp)
@@ -611,113 +618,29 @@ class MainActivity : ComponentActivity() {
 }
 
 
-@Composable
-fun DrawScrollableView(content: @Composable () -> Unit, modifier: Modifier) {
-    AndroidView(modifier = modifier, factory = {
-        val scrollView = ScrollView(it)
-        val layout = LinearLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT)
-        scrollView.layoutParams = layout
-        scrollView.isVerticalFadingEdgeEnabled = true
-        scrollView.isScrollbarFadingEnabled = false
-        scrollView.addView(ComposeView(it).apply {
-            setContent {
-                content()
-            }
-        })
-        val linearLayout = LinearLayout(it)
-        linearLayout.orientation = LinearLayout.VERTICAL
-        linearLayout.layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT)
-        linearLayout.addView(scrollView)
-        linearLayout
-    })
-}
-
-
-/*class MainActivity2 : ComponentActivity() {
-
-    private lateinit var surface: Surface
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        surface = createSurface()
-        setContent {
-            val animationState = remember { androidx.compose.animation.core.Animatable(0f) }
-            LaunchedEffect(Unit) {
-                while (isActive) {
-                    animationState.animateTo(1f, 1000) // Animates from 0 to 1f over 1 second
-                    animationState.animateTo(0f, 1000) // Animates back to 0f over 1 second
-                    captureFrame(animationState.value)
-                    delay(33) // Capture frame every 33 milliseconds (approx 30 fps)
-                }
-            }
-            SampleAnimation(animationState.value)
-        }
-    }
-
-    private fun createSurface(): Surface {
-        val surfaceView = SurfaceView(this)
-        val holder = surfaceView.holder
-        holder.addCallback(object : SurfaceHolder.Callback {
-            override fun surfaceCreated(holder: SurfaceHolder) {
-                surface = holder.surface
-            }
-
-            override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {}
-
-            override fun surfaceDestroyed(holder: SurfaceHolder) {}
-        })
-        return surface
-    }
-
-    private fun captureFrame(progress: Float) {
-        surface.draw { canvas ->
-            val view = LocalView.current
-            view.draw(canvas) // Draw the Compose UI onto the surface
-        }
-        val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
-        surface.readPixels(
-            pixels = IntArray(view.width * view.height),
-            offset = 0,
-            stride = view.width,
-            x = 0,
-            y = 0,
-            width = view.width,
-            height = view.height
-        )
-        bitmap.applyAlpha(setAlphaForTransition(progress)) // Apply alpha for fade effect
-        val filename = "frame_${System.currentTimeMillis()}.png"
-        val file = File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), filename)
-        val stream = FileOutputStream(file)
-        bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
-        stream.close()
-        bitmap.recycle() // Release resources
-    }
-
-    private fun setAlphaForTransition(progress: Float): Float {
-        return if (progress < 0.5f) progress * 2 else 1f - (progress - 0.5f) * 2
-    }
-
-    @Composable
-    fun SampleAnimation(progress: Float) {
-        val color = Color(red = progress, green = 1f - progress, blue = 0f)
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(color)
-                .padding(16.dp)
-        ) {
-            Text(
-                text = "Animating Text",
-                color = Color.White,
-                fontSize = 30.sp,
-                modifier = Modifier.align(Alignment.Center)
-            )
-        }
-    }
+//@Composable
+//fun DrawScrollableView(content: @Composable () -> Unit, modifier: Modifier) {
+//    AndroidView(modifier = modifier, factory = {
+//        val scrollView = ScrollView(it)
+//        val layout = LinearLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT)
+//        scrollView.layoutParams = layout
+//        scrollView.isVerticalFadingEdgeEnabled = true
+//        scrollView.isScrollbarFadingEnabled = false
+//        scrollView.addView(ComposeView(it).apply {
+//            setContent {
+//                content()
+//            }
+//        })
+//        val linearLayout = LinearLayout(it)
+//        linearLayout.orientation = LinearLayout.VERTICAL
+//        linearLayout.layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT)
+//        linearLayout.addView(scrollView)
+//        linearLayout
+//    })
+//}
 
 
 
-}*/
 
 fun removeThashkeel(s: String): String {
 
