@@ -5,10 +5,6 @@ package quran.shakir
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.view.ViewGroup.LayoutParams.MATCH_PARENT
-import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
-import android.widget.LinearLayout
-import android.widget.ScrollView
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -38,7 +34,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -51,7 +46,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
@@ -65,7 +59,6 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -378,53 +371,54 @@ class MainActivity : ComponentActivity() {
                                         color = Color.White
                                     )
                                 }
-
-                                if(superSearch)
-                                Image(
-                                    painter = painterResource(id = R.drawable.baseline_share_24),
-                                    contentDescription = "Share Clipboard Content",
+                                if (superSearch)
+                                    Image(
+                                        painter = painterResource(id = R.drawable.baseline_share_24),
+                                        contentDescription = "Share Clipboard Content",
 //                                    textAlign = TextAlign.Right,
-                                    modifier = Modifier
-                                        .align(alignment = Alignment.CenterVertically)
-                                        .padding(12.dp)
-                                        .alpha(if (superSearch) 1f else .2f)
-                                        .clickable {
-                                            scope.launch {
-                                                try {
-                                                    var s =
-                                                        showList
-                                                            .mapIndexed { index, s ->
-                                                                showList.get(index) + "\n\n" +
-                                                                        showListSuperArabic.get(
-                                                                            index
-                                                                        ) + "\n\n" +
-                                                                        showListSuperTrans.get(index) + ""
-                                                            }
-                                                            .joinToString("\n\n\n")
+                                        modifier = Modifier
+                                            .align(alignment = Alignment.CenterVertically)
+                                            .padding(12.dp)
+                                            .alpha(if (superSearch) 1f else .2f)
+                                            .clickable {
+                                                scope.launch {
+                                                    try {
+                                                        var s =
+                                                            showList
+                                                                .mapIndexed { index, s ->
+                                                                    showList.get(index) + "\n\n" +
+                                                                            showListSuperArabic.get(
+                                                                                index
+                                                                            ) + "\n\n" +
+                                                                            showListSuperTrans.get(
+                                                                                index
+                                                                            ) + ""
+                                                                }
+                                                                .joinToString("\n\n\n")
 
-                                                    val sendIntent = Intent()
-                                                    sendIntent.action = Intent.ACTION_SEND
-                                                    sendIntent.putExtra(Intent.EXTRA_TEXT, s)
-                                                    sendIntent.type = "text/plain"
+                                                        val sendIntent = Intent()
+                                                        sendIntent.action = Intent.ACTION_SEND
+                                                        sendIntent.putExtra(Intent.EXTRA_TEXT, s)
+                                                        sendIntent.type = "text/plain"
 
-                                                    val shareIntent =
-                                                        Intent.createChooser(sendIntent, null)
-                                                    startActivity(shareIntent)
-                                                } catch (e: Exception) {
-                                                    Toast
-                                                        .makeText(
-                                                            this@MainActivity,
-                                                            "${e.message}",
-                                                            Toast.LENGTH_SHORT
-                                                        )
-                                                        .show()
+                                                        val shareIntent =
+                                                            Intent.createChooser(sendIntent, null)
+                                                        startActivity(shareIntent)
+                                                    } catch (e: Exception) {
+                                                        Toast
+                                                            .makeText(
+                                                                this@MainActivity,
+                                                                "${e.message}",
+                                                                Toast.LENGTH_SHORT
+                                                            )
+                                                            .show()
+                                                    }
+
                                                 }
 
-                                            }
-
-                                        },
-                                    //fontFamily = kfgqpc_uthmanic_script_hafs_regular,
-                                )
+                                            },
+                                        //fontFamily = kfgqpc_uthmanic_script_hafs_regular,
+                                    )
 
                                 Image(
                                     painter = painterResource(id = R.drawable.baseline_settings_24),
@@ -435,7 +429,12 @@ class MainActivity : ComponentActivity() {
                                         .padding(12.dp)
                                         .alpha(1f)
                                         .clickable {
-                                      startActivity(Intent(this@MainActivity, SettingsActivity::class.java))
+                                            startActivity(
+                                                Intent(
+                                                    this@MainActivity,
+                                                    SettingsActivity::class.java
+                                                )
+                                            )
 
                                         },
                                     //fontFamily = kfgqpc_uthmanic_script_hafs_regular,
@@ -506,21 +505,25 @@ class MainActivity : ComponentActivity() {
                                                             .padding(8.dp)
                                                             .align(Alignment.End),
                                                         fontFamily = kfgqpc_uthmanic_script_hafs_regular,
-                                                        fontSize = pref.getInt("font_size_arabic",16).sp,
+                                                        fontSize = pref.getInt(
+                                                            "font_size_arabic",
+                                                            16
+                                                        ).sp,
                                                         color = Color.White,
                                                         lineHeight = 1.4.em,
 
 
-
-
-                                                    )
+                                                        )
                                                 }
                                                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                                                     Text(
                                                         showListSuperTrans.get(index),
                                                         modifier = Modifier.padding(8.dp),
                                                         color = Color.White,
-                                                        fontSize = pref.getInt("font_size_malayalam",16).sp,
+                                                        fontSize = pref.getInt(
+                                                            "font_size_malayalam",
+                                                            16
+                                                        ).sp,
                                                         lineHeight = 1.4.em,
                                                     )
                                                 }
@@ -638,8 +641,6 @@ class MainActivity : ComponentActivity() {
 //        linearLayout
 //    })
 //}
-
-
 
 
 fun removeThashkeel(s: String): String {

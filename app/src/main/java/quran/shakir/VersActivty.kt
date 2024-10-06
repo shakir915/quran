@@ -1,5 +1,8 @@
 package quran.shakir
 
+
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalPlatformFeature
 import android.Manifest
 import android.content.ContentValues
 import android.content.Context
