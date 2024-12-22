@@ -2,7 +2,7 @@ package quran.shakir
 
 
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalPlatformFeature
+
 import android.Manifest
 import android.content.ContentValues
 import android.content.Context
@@ -435,6 +435,30 @@ class VersActivty : ComponentActivity() {
                                     fontFamily = kfgqpc_uthmanic_script_hafs_regular,
                                     color = Color.White
                                 )
+
+
+                                Image(
+                                    painter = painterResource(id = R.drawable.baseline_play_circle_24),
+                                    contentDescription = "Share Clipboard Content",
+//                                    textAlign = TextAlign.Right,
+                                    modifier = Modifier
+                                        .padding(12.dp)
+                                        .clickable {
+                                            startActivity(
+                                                Intent(
+                                                    this@VersActivty,
+                                                    PlayActivty::class.java
+                                                ).apply {
+                                                    putExtra("chapterNumber",intent.getIntExtra("chapterNumber",1))
+                                                    putExtra("chapterName", intent.getStringExtra("chapterName"))
+                                                }
+                                            )
+
+                                        },
+                                )
+
+
+
 
                                 Text(
                                     (otherSuraAyas + selected.size).toString(), color = Color.White,

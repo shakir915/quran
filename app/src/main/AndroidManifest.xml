@@ -43,6 +43,7 @@
         </activity>
         <activity android:name="quran.shakir.VersActivty" />
         <activity android:name="quran.shakir.SettingsActivity" />
+        <activity android:name="quran.shakir.PlayActivty" />
 
 
         <provider
