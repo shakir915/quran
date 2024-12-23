@@ -29,8 +29,8 @@ android {
         applicationId = "quran.shakir.kadakkadan"
         minSdk = 24
         targetSdk = 34
-        versionCode = 12
-        versionName = "1.0.7"
+        versionCode = 13
+        versionName = "1.0.8"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

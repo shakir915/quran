@@ -8,12 +8,16 @@ import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.media.AudioManager
+import android.media.MediaPlayer
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -34,6 +38,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -65,10 +70,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import quran.shakir.ui.theme.QuranTheme
+import quran.shakir.ui.theme.QuranThemeFullScreen
 import java.io.File
 import java.io.FileOutputStream
 import java.text.NumberFormat
 import java.util.Locale
+import androidx.activity.compose.rememberLauncherForActivityResult as rememberLauncherForActivityResult1
 
 class PlayActivty : ComponentActivity() {
 
@@ -112,8 +119,21 @@ class PlayActivty : ComponentActivity() {
     @OptIn(ExperimentalLayoutApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+
+
         chapterNumber = intent.getIntExtra("chapterNumber", 1).toString()
         val chapterName = intent.getStringExtra("chapterName") ?: ""
+
+        try {
+            filesDir.listFiles()?.forEach {
+                println("${it.name} ${it.readText()}")
+            }
+        } catch (e: Exception) {
+           e.printStackTrace()
+        }
+        var file=File(filesDir,chapterNumber+"_"+System.currentTimeMillis())
+        var timeStamps= arrayListOf<String>()
 
 
         println(
@@ -169,17 +189,87 @@ class PlayActivty : ComponentActivity() {
             }
 
             setContent {
+                val scope = rememberCoroutineScope()
+
+                var uri by remember { mutableStateOf<Uri?>(null) }
+                val context = LocalContext.current
+
+                val mediaPlayer = remember { MediaPlayer() }
+                var isPlaying by remember { mutableStateOf(false) }
+
+                // ActivityResultLauncher for the document picker
+                val launcher = rememberLauncherForActivityResult1(
+                    contract = ActivityResultContracts.OpenDocument()
+                ) { uri1: Uri? ->
+                    getContentResolver().takePersistableUriPermission(
+                        uri1!!,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    );
+
+                    uri = uri1
+                    println("mediaPlayer 0  ${uri}")
+                    if (uri != null) {
+                        try {
+                            scope.launch {
+                                val audioManager =
+                                    context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
+                                audioManager.requestAudioFocus(
+                                    null,
+                                    AudioManager.STREAM_MUSIC,
+                                    AudioManager.AUDIOFOCUS_GAIN
+                                )
+
+                                mediaPlayer.reset()
+                                mediaPlayer.setDataSource(context, uri!!)
+                                mediaPlayer.prepare()
+
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                                    mediaPlayer.setOnMediaTimeDiscontinuityListener { mp, mts ->
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                                            println("what ${mts.anchorSystemNanoTime}")
+                                        }
+                                        return@setOnMediaTimeDiscontinuityListener
+                                    }
+                                }
+                                mediaPlayer.setOnInfoListener { mp, what, extra ->
+                                    println("what $what")
+                                    return@setOnInfoListener true
+                                }
+                                println("mediaPlayer ${mediaPlayer.isPlaying}")
+                            }
+
+                        } catch (e: Exception) {
+
+                            e.printStackTrace()
+                            println("mediaPlayer2 ")
+                        }
+                    }
+
+                }
+
+
+
+                DisposableEffect(uri) {
+
+
+                    onDispose {
+                        try {
+                            // mediaPlayer.release()
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+                }
 
 
                 val lazyListState = rememberLazyListState()
 
 
-                val scope = rememberCoroutineScope()
-
-
                 val selected = remember { mutableStateListOf<Int>() }
 
                 var indexPlus1 by remember { mutableStateOf(0) }
+                var hideTopBar by remember { mutableStateOf(false) }
 
 
                 val clipboardManager = LocalClipboardManager.current
@@ -193,34 +283,43 @@ class PlayActivty : ComponentActivity() {
                     }
                 }
 
-                QuranTheme {
+                QuranThemeFullScreen {
 
 
                     // A surface container using the 'background' color from the theme
                     Surface(modifier = Modifier.fillMaxSize(), color = Color(0xFF121316)) {
                         Column {
-/*                            Row(
-                                horizontalArrangement = Arrangement.End,
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .background(color = Color.White.copy(alpha = .05f))
-                            ) {
-
-
-                                Image(
-                                    painter = painterResource(id = R.drawable.baseline_play_circle_24),
-                                    contentDescription = "Share Clipboard Content",
+                            if (!hideTopBar)
+                                Row(
+                                    horizontalArrangement = Arrangement.End,
+                                    verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier
-                                        .padding(12.dp)
-                                        .clickable {
+                                        .fillMaxWidth()
+                                        .background(color = Color.White.copy(alpha = .05f))
+                                ) {
 
 
-                                        },
-                                )
+
+                                    Image(
+                                        painter = painterResource(id = R.drawable.baseline_image_search_24),
+                                        contentDescription = "Share Clipboard Content",
+                                        modifier = Modifier
+                                            .padding(12.dp)
+                                            .clickable {
+                                                launcher.launch(
+                                                    arrayOf(
+                                                        "image/*",
+                                                        "video/*",
+                                                        "audio/*"
+                                                    )
+                                                ) // MIME types for media
+                                                hideTopBar=true
+
+                                            },
+                                    )
 
 
-                            }*/
+                                }
 
 
 
@@ -235,10 +334,31 @@ class PlayActivty : ComponentActivity() {
                                         indication = null,
                                         interactionSource = remember { MutableInteractionSource() },
                                         onClick = {
-                                            if (ayaths.getOrNull(indexPlus1)!=null)
-                                            indexPlus1++
-                                            else{
+                                            if (ayaths.getOrNull(indexPlus1) != null)
+                                            {
+                                                try {
+
+                                                    if (!mediaPlayer.isPlaying) {
+                                                        timeStamps.clear()
+                                                        mediaPlayer.start()
+                                                    }
+                                                } catch (e: Exception) {
+                                                   e.printStackTrace()
+                                                }
+                                                indexPlus1++
+                                                timeStamps.add("${indexPlus1} ${mediaPlayer.currentPosition}")
+
+
+
+                                            }
+                                            else {
+                                                file.writeText(timeStamps.joinToString("\n"))
                                                 finish()
+                                                try {
+                                                    mediaPlayer.release()
+                                                } catch (e: Exception) {
+                                                   e.printStackTrace()
+                                                }
                                             }
                                         }
 
