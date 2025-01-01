@@ -353,7 +353,7 @@ class PlayActivty : ComponentActivity() {
                             .background(gradientBrush)
                     ) {
                         Column {
-                            if (!hideTopBar)
+
                                 Row(
                                     horizontalArrangement = Arrangement.End,
                                     verticalAlignment = Alignment.CenterVertically,
@@ -453,7 +453,7 @@ class PlayActivty : ComponentActivity() {
                                             },
                                     )
                                     if (isEdit)
-                                    Image(
+                                        Image(
                                         painter = painterResource(id = R.drawable.baseline_close_24),
                                         contentDescription = "Share Clipboard Content",
                                         modifier = Modifier
