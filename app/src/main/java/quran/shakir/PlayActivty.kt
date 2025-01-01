@@ -13,6 +13,7 @@ import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.CalendarContract.Colors
 import android.provider.MediaStore
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -29,12 +30,21 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalProvider
@@ -48,14 +58,19 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -78,6 +93,7 @@ import java.util.Locale
 import androidx.activity.compose.rememberLauncherForActivityResult as rememberLauncherForActivityResult1
 
 class PlayActivty : ComponentActivity() {
+    var lastHitTime = 0L
 
     override fun onPause() {
         super.onPause()
@@ -130,10 +146,10 @@ class PlayActivty : ComponentActivity() {
                 println("${it.name} ${it.readText()}")
             }
         } catch (e: Exception) {
-           e.printStackTrace()
+            e.printStackTrace()
         }
-        var file=File(filesDir,chapterNumber+"_"+System.currentTimeMillis())
-        var timeStamps= arrayListOf<String>()
+        var file = File(filesDir, chapterNumber + "_" + System.currentTimeMillis())
+        var timeStamps = arrayListOf<String>()
 
 
         println(
@@ -155,10 +171,46 @@ class PlayActivty : ComponentActivity() {
         }
 
         lifecycleScope.launch {
+
+            val gradientBrush = Brush.linearGradient(
+                colors = listOf(
+                    Color(0xFF121316), // Start color
+                    Color(0xFF232425), // Mid color
+                    Color(0xFF343637)  // End color
+                )
+            )
+
+
             val bismi = getAyaths("1").first.first()
             val at = getAyaths(chapterNumber)
-            val ayaths = at.first
-            val ayathsTrans = at.second
+
+            var file_edit_cut = File(filesDir, "edited_cut_aya_data_$chapterNumber")
+
+
+            var ayaths: ArrayList<String>
+            var ayathsTrans: ArrayList<String>
+            var ayathNumbers: ArrayList<Int>
+            var isEnd: ArrayList<Boolean>
+
+            try {
+                val text = file_edit_cut.readText()
+                ayaths = ArrayList(text.split("||||")[0].split("||"))
+                ayathsTrans = ArrayList(text.split("||||")[1].split("||"))
+                ayathNumbers = ArrayList(text.split("||||")[2].split("||").map { it.toInt() })
+                isEnd = ArrayList(text.split("||||")[3].split("||").map { it.toBoolean() })
+                if (text.isNullOrBlank()) throw Exception("")
+                if (ayaths.isEmpty()) throw Exception("")
+                println("bshdsbjdjasd Read from edited/save")
+            } catch (e: Exception) {
+                ayaths = at.first
+                ayathsTrans = at.second
+                ayathNumbers = ArrayList(at.second.mapIndexed { index, s -> index + 1 })
+                isEnd = ArrayList(at.second.mapIndexed { index, s -> true })
+                println("bshdsbjdjasd Read from db")
+
+            }
+
+
             var otherSuraAyas = 0
 
 
@@ -189,6 +241,8 @@ class PlayActivty : ComponentActivity() {
             }
 
             setContent {
+
+                val scrollState = rememberScrollState()
                 val scope = rememberCoroutineScope()
 
                 var uri by remember { mutableStateOf<Uri?>(null) }
@@ -196,6 +250,7 @@ class PlayActivty : ComponentActivity() {
 
                 val mediaPlayer = remember { MediaPlayer() }
                 var isPlaying by remember { mutableStateOf(false) }
+                var isEdit by remember { mutableStateOf(false) }
 
                 // ActivityResultLauncher for the document picker
                 val launcher = rememberLauncherForActivityResult1(
@@ -250,15 +305,18 @@ class PlayActivty : ComponentActivity() {
 
 
 
-                DisposableEffect(uri) {
+                DisposableEffect("") {
 
 
                     onDispose {
                         try {
-                            // mediaPlayer.release()
+                            mediaPlayer.release()
                         } catch (e: Exception) {
                             e.printStackTrace()
                         }
+
+
+
                     }
                 }
 
@@ -268,6 +326,8 @@ class PlayActivty : ComponentActivity() {
 
                 val selected = remember { mutableStateListOf<Int>() }
 
+                var editAya by remember { mutableStateOf("") }
+                var editTrans by remember { mutableStateOf("") }
                 var indexPlus1 by remember { mutableStateOf(0) }
                 var hideTopBar by remember { mutableStateOf(false) }
 
@@ -287,7 +347,11 @@ class PlayActivty : ComponentActivity() {
 
 
                     // A surface container using the 'background' color from the theme
-                    Surface(modifier = Modifier.fillMaxSize(), color = Color(0xFF121316)) {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(gradientBrush)
+                    ) {
                         Column {
                             if (!hideTopBar)
                                 Row(
@@ -301,24 +365,187 @@ class PlayActivty : ComponentActivity() {
 
 
                                     Image(
-                                        painter = painterResource(id = R.drawable.baseline_image_search_24),
+                                        painter = painterResource(id = if (!isEdit) R.drawable.baseline_edit_24 else R.drawable.baseline_save_24),
                                         contentDescription = "Share Clipboard Content",
                                         modifier = Modifier
                                             .padding(12.dp)
                                             .clickable {
-                                                launcher.launch(
-                                                    arrayOf(
-                                                        "image/*",
-                                                        "video/*",
-                                                        "audio/*"
-                                                    )
-                                                ) // MIME types for media
-                                                hideTopBar=true
 
+                                                if (!isEdit && indexPlus1 > 0) {
+
+
+                                                    val index = indexPlus1 - 1
+                                                    val an=  ayathNumbers[index]
+
+
+
+
+                                                    editAya = ayaths
+                                                        .filterIndexed { index, s ->
+                                                            ayathNumbers[index]==an
+                                                        }
+                                                        .joinToString("\n\n")
+
+
+
+                                                    editTrans =
+                                                        ayathsTrans
+                                                            .filterIndexed { index, s ->
+                                                                ayathNumbers[index]==an
+                                                            }
+                                                            .joinToString("\n\n")
+
+                                                    isEdit = !isEdit
+
+                                                } else if (isEdit && indexPlus1 > 0) {
+
+                                                    val index = indexPlus1 - 1
+                                                    var an = ayathNumbers[index]
+                                                    var fi = ayathNumbers.indexOfFirst { it == an }
+                                                    val newAya = editAya
+                                                        .trimIndent()
+                                                        .split("\n")
+                                                        .map { it.trimIndent() }
+                                                        .filter { it.isNotBlank() }
+                                                    val newTran = editTrans
+                                                        .trimIndent()
+                                                        .split("\n")
+                                                        .map { it.trimIndent() }
+                                                        .filter { it.isNotBlank() }
+                                                    if (newAya.isEmpty()||newAya.size != newTran.size) {
+                                                        throw Exception("newAya.size != newTran.size")
+                                                    }
+
+                                                    while (ayathNumbers.contains(an)) {
+                                                        var i = ayathNumbers.indexOfFirst { it == an }
+                                                        ayathNumbers.removeAt(i)
+                                                        ayaths.removeAt(i)
+                                                        ayathsTrans.removeAt(i)
+                                                        isEnd.removeAt(i)
+                                                    }
+                                                    ayaths.addAll(fi,newAya)
+                                                    ayathsTrans.addAll(fi,newTran)
+                                                    ayathNumbers.addAll(fi,newAya.map { an })
+                                                    isEnd.addAll(fi,newAya.map { it==newAya.last() })
+
+
+                                                    try {
+
+                                                        file_edit_cut.writeText(
+                                                            ayaths.joinToString("||")
+                                                                    + "||||"
+                                                                    + ayathsTrans.joinToString("||")
+                                                                    + "||||"
+                                                                    + ayathNumbers.joinToString("||")
+                                                                    + "||||"
+                                                                    + isEnd.joinToString("||")
+                                                        )
+                                                        println("bshdsbjdjasd  wrote")
+                                                    } catch (e: Exception) {
+                                                        e.printStackTrace()
+                                                    }
+
+                                                    isEdit = !isEdit
+
+                                                }
+
+
+                                            },
+                                    )
+                                    if (isEdit)
+                                    Image(
+                                        painter = painterResource(id = R.drawable.baseline_close_24),
+                                        contentDescription = "Share Clipboard Content",
+                                        modifier = Modifier
+                                            .padding(12.dp)
+                                            .clickable {
+                                                    isEdit=false
                                             },
                                     )
 
 
+
+
+                                    if (!isEdit) {
+                                        Image(
+                                            painter = painterResource(id = R.drawable.baseline_image_search_24),
+                                            contentDescription = "Share Clipboard Content",
+                                            modifier = Modifier
+                                                .padding(12.dp)
+                                                .clickable {
+                                                    launcher.launch(
+                                                        arrayOf(
+                                                            "image/*",
+                                                            "video/*",
+                                                            "audio/*"
+                                                        )
+                                                    ) // MIME types for media
+                                                    hideTopBar = true
+
+                                                },
+                                        )
+
+                                        Image(
+                                            painter = painterResource(id = R.drawable.baseline_navigate_next_24),
+                                            contentDescription = "Share Clipboard Content",
+                                            modifier = Modifier
+                                                .rotate(180f)
+                                                .padding(12.dp)
+                                                .clickable {
+                                                    if (indexPlus1 > 0)
+                                                        indexPlus1--
+                                                },
+                                        )
+
+                                        BasicTextField(
+                                            cursorBrush = SolidColor(Color.Cyan),
+                                            textStyle = TextStyle(
+                                                color = Color.White,
+                                                textAlign = TextAlign.Start,
+                                            ),
+                                            modifier = Modifier
+                                                .width(50.dp)
+                                                .background(Color.White.copy(alpha = .1f))
+                                                .padding(start = 8.dp, end = 8.dp),
+                                            maxLines = 1,
+                                            keyboardActions = KeyboardActions {
+
+                                            },
+
+                                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                                            value = if (indexPlus1 <= 0) "" else indexPlus1.toString(),
+                                            onValueChange = { newText ->
+                                                println("bshdsbjdjasdonValueChange")
+                                                try {
+                                                    if (newText.isBlank() || newText.trim()
+                                                            .toInt() <= 0
+                                                    )
+                                                        indexPlus1 = 0
+
+                                                    if (ayaths.getOrNull(
+                                                            newText.trim().toInt() - 1
+                                                        ) != null
+                                                    )
+                                                        indexPlus1 = newText.trim().toInt()
+                                                } catch (e: Exception) {
+                                                    e.printStackTrace()
+                                                }
+                                            })
+
+
+                                        Image(
+                                            painter = painterResource(id = R.drawable.baseline_navigate_next_24),
+                                            contentDescription = "Share Clipboard Content",
+                                            modifier = Modifier
+                                                .padding(12.dp)
+                                                .clickable {
+                                                    if (ayaths.getOrNull(indexPlus1) != null)
+                                                        indexPlus1++
+                                                },
+                                        )
+
+
+                                    }
                                 }
 
 
@@ -334,90 +561,151 @@ class PlayActivty : ComponentActivity() {
                                         indication = null,
                                         interactionSource = remember { MutableInteractionSource() },
                                         onClick = {
-                                            if (ayaths.getOrNull(indexPlus1) != null)
-                                            {
-                                                try {
+                                            if (ayaths.getOrNull(indexPlus1) != null) {
+                                                if (System.currentTimeMillis() - lastHitTime > 300) {
+                                                    try {
 
-                                                    if (!mediaPlayer.isPlaying) {
-                                                        timeStamps.clear()
-                                                        mediaPlayer.start()
+                                                        if (!mediaPlayer.isPlaying) {
+                                                            timeStamps.clear()
+                                                            mediaPlayer.start()
+                                                        }
+                                                    } catch (e: Exception) {
+                                                        e.printStackTrace()
                                                     }
-                                                } catch (e: Exception) {
-                                                   e.printStackTrace()
+                                                    indexPlus1++
+                                                    timeStamps.add("${indexPlus1} ${mediaPlayer.currentPosition}")
+                                                    lastHitTime = System.currentTimeMillis()
                                                 }
-                                                indexPlus1++
-                                                timeStamps.add("${indexPlus1} ${mediaPlayer.currentPosition}")
 
 
-
-                                            }
-                                            else {
+                                            } else {
                                                 file.writeText(timeStamps.joinToString("\n"))
                                                 finish()
                                                 try {
                                                     mediaPlayer.release()
                                                 } catch (e: Exception) {
-                                                   e.printStackTrace()
+                                                    e.printStackTrace()
                                                 }
                                             }
                                         }
 
                                     ),
                             ) {
-                                Spacer(modifier = Modifier.weight(3f))
-                                if (indexPlus1 == 0) {
-                                    Text(
-                                        text =
-                                        if (chapterNumber == "1") "أعوذُ بِٱللَّهِ مِنَ ٱلشَّيۡطَٰنِ ٱلرَّجِيمِ" else
-                                            bismi,
-                                        modifier = Modifier
-                                            .padding(8.dp)
-                                            .align(Alignment.CenterHorizontally),
-                                        fontFamily = kfgqpc_uthmanic_script_hafs_regular,
-                                        fontSize = 11.sp,
-                                        color = Color.White,
-                                        textAlign = TextAlign.Center
+
+                                if (isEdit && indexPlus1 > 0) {
+
+                                    Column(modifier = Modifier.fillMaxSize().verticalScroll(scrollState)) {
+                                        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                                            BasicTextField(
+                                                cursorBrush = SolidColor(Color.Cyan),
+                                                textStyle = TextStyle(
+                                                    color = Color.White,
+                                                    textAlign = TextAlign.Start,
+                                                    fontFamily = kfgqpc_uthmanic_script_hafs_regular,
+                                                    fontSize = (pref.getInt("font_size_arabic", 20)).sp,
+                                                ),
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .background(Color.White.copy(alpha = .1f))
+                                                    .padding(start = 8.dp, end = 8.dp),
+                                                keyboardActions = KeyboardActions {
+
+                                                },
 
 
-                                    )
+                                                value = editAya,
+                                                onValueChange = { newText ->
+                                                    editAya=newText
+                                                })
+                                        }
+
+                                        Spacer(modifier = Modifier.height(10.dp))
+
+                                        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                                            BasicTextField(
+                                                cursorBrush = SolidColor(Color.Cyan),
+                                                textStyle = TextStyle(
+                                                    color = Color.White,
+                                                    textAlign = TextAlign.Start,
+                                                    fontSize = pref.getInt("font_size_malayalam", 16).sp
+                                                ),
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .background(Color.White.copy(alpha = .1f))
+                                                    .padding(start = 8.dp, end = 8.dp),
+                                                keyboardActions = KeyboardActions {
+
+                                                },
+
+                                                value = editTrans,
+                                                onValueChange = { newText ->
+                                                    editTrans = newText
+                                                })
+                                        }
+
+
+                                    }
                                 } else {
 
-                                    val index = indexPlus1 - 1
-                                    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                                    Spacer(modifier = Modifier.weight(3f))
+                                    if (indexPlus1 == 0) {
                                         Text(
-                                            text = "${ayaths.get(index)} ${
-                                                java.lang.String.valueOf(
-                                                    nf.format(index + 1)
-                                                )
-                                            }",
+                                            text =
+                                            if (chapterNumber == "1") "أعوذُ بِٱللَّهِ مِنَ ٱلشَّيۡطَٰنِ ٱلرَّجِيمِ" else
+                                                bismi,
                                             modifier = Modifier
                                                 .padding(8.dp)
                                                 .align(Alignment.CenterHorizontally),
                                             fontFamily = kfgqpc_uthmanic_script_hafs_regular,
-                                            fontSize = (pref.getInt("font_size_arabic", 20)).sp,
-                                            lineHeight = 1.4.em,
-                                            textAlign = TextAlign.Center,
-                                            color = Color.White
-
-
-                                        )
-                                    }
-                                    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                                        Text(
-                                            ayathsTrans.get(index),
-                                            modifier = Modifier
-                                                .padding(8.dp)
-                                                .align(Alignment.CenterHorizontally),
+                                            fontSize = 11.sp,
                                             color = Color.White,
-                                            lineHeight = 1.4.em,
-                                            textAlign = TextAlign.Center,
-                                            fontSize = pref.getInt("font_size_malayalam", 16).sp
+                                            textAlign = TextAlign.Center
+
+
                                         )
+                                    } else {
+
+                                        val index = indexPlus1 - 1
+                                        var number=if (isEnd[index]) "\u00A0${
+                                            java.lang.String.valueOf(
+                                               nf.format( ayathNumbers.get(index))
+                                            )
+                                        }" else ""
+
+
+                                        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                                            Text(
+                                                text = "${ayaths.get(index)}$number",
+                                                modifier = Modifier
+                                                    .padding(8.dp)
+                                                    .align(Alignment.CenterHorizontally),
+                                                fontFamily = kfgqpc_uthmanic_script_hafs_regular,
+                                                fontSize = (pref.getInt("font_size_arabic", 20)).sp,
+                                                lineHeight = 1.425.em,
+                                                textAlign = TextAlign.Center,
+                                                color = Color.White
+
+
+                                            )
+                                        }
+                                        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                                            Text(
+                                                ayathsTrans.get(index),
+                                                modifier = Modifier
+                                                    .padding(8.dp)
+                                                    .align(Alignment.CenterHorizontally),
+                                                color = Color.White,
+                                                lineHeight = 1.4.em,
+                                                textAlign = TextAlign.Center,
+                                                fontSize = pref.getInt("font_size_malayalam", 16).sp
+                                            )
+                                        }
+
                                     }
+
+                                    Spacer(modifier = Modifier.weight(5f))
 
                                 }
-
-                                Spacer(modifier = Modifier.weight(5f))
                             }
 
 
