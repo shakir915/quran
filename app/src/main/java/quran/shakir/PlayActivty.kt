@@ -343,7 +343,7 @@ class PlayActivty : ComponentActivity() {
                     }
                 }
 
-                QuranThemeFullScreen {
+                QuranTheme {
 
 
                     // A surface container using the 'background' color from the theme
@@ -555,7 +555,7 @@ class PlayActivty : ComponentActivity() {
 
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .padding(8.dp)
+                                    .padding(start = 16.dp, end = 16.dp)
                                     .align(alignment = Alignment.CenterHorizontally)
                                     .clickable(
                                         indication = null,
@@ -647,7 +647,7 @@ class PlayActivty : ComponentActivity() {
                                     }
                                 } else {
 
-                                    Spacer(modifier = Modifier.weight(3f))
+                                    Spacer(modifier = Modifier.weight(2f))
                                     if (indexPlus1 == 0) {
                                         Text(
                                             text =
@@ -703,7 +703,7 @@ class PlayActivty : ComponentActivity() {
 
                                     }
 
-                                    Spacer(modifier = Modifier.weight(5f))
+                                    Spacer(modifier = Modifier.weight(6f))
 
                                 }
                             }
