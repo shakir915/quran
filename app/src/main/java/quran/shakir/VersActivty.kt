@@ -552,7 +552,7 @@ class VersActivty : ComponentActivity() {
 
 
                             ) {
-                                items(if (chapterNumber == "1") ayaths.size else ayaths.size + 1) { indexPlus1 ->
+                                items( ayaths.size + 1) { indexPlus1 ->
 
                                     if (indexPlus1 == 0) {
                                         Text(
