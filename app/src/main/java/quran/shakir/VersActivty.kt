@@ -93,43 +93,117 @@ class VersActivty : ComponentActivity() {
 
         val a = pref.getString("selected", null)?.split("|")
         var s = ""
-        a?.forEach {
-            try {
-                println("hhghhhhh $it")
-                val chapterNumber = it.split(":").get(0).toInt()
-                val ayaIndices = it.split(":").get(1).split(",").map { it.toInt() }
-                val chapterName = chaptersList.get(chapterNumber - 1)
-                val at = getAyaths(chapterNumber.toString())
 
-
-                var prev = -222
-
-                s += "\u202A\n-----------------------------\n"
-                s += "Quran:$chapterNumber ($chapterName)"
-                s += "\n----------------------------- \u202A"
-                ayaIndices.sorted().distinct().forEachIndexed { index, ayaIndxe ->
-                    if (prev == -222 || prev == ayaIndxe - 1 || index == ayaIndices.last()) {
-                        s += "\n\n"
-                    } else {
-                        s += "\u202A \n\n....\n\n \u202A"
+        if (pref.getString("SHARE_LANGUAGES_V1", arabicPlusMalayalam) == malayalamOnly) {
+            a?.forEach {
+                try {
+                    val chapterNumber = it.split(":").get(0).toInt()
+                    val ayaIndices = it.split(":").get(1).split(",").map { it.toInt() }
+                    val at = getAyaths(chapterNumber.toString())
+                    ayaIndices.sorted().distinct().forEachIndexed { index, ayaIndxe ->
+                        s += chapterNumber.toString() + ":" + (ayaIndxe + 1).toString() + " " + at.second.get(
+                            ayaIndxe
+                        ) + "\n\n"
                     }
-
-
-                    s += "\u202B${at.first.get(ayaIndxe)}  {${
-                        java.lang.String.valueOf(
-                            nf.format(
-                                ayaIndxe + 1
-                            )
-                        )
-                    }}\u202B"
-                    s += "\n\n"
-                    s += "\u202A" + (ayaIndxe + 1).toString() + ". " + at.second.get(ayaIndxe) + "\u202A"
-
-
-                    prev = ayaIndxe
+                } catch (e: Exception) {
+                    e.printStackTrace()
                 }
 
-                s += "\n\n"
+            }
+        } else {
+            a?.forEach {
+                try {
+                    println("hhghhhhh $it")
+                    val chapterNumber = it.split(":").get(0).toInt()
+                    val ayaIndices = it.split(":").get(1).split(",").map { it.toInt() }
+                    val chapterName = chaptersList.get(chapterNumber - 1)
+                    val at = getAyaths(chapterNumber.toString())
+
+
+                    var prev = -222
+
+                    s += "\u202A\n-----------------------------\n"
+                    s += "Quran:$chapterNumber ($chapterName)"
+                    s += "\n----------------------------- \u202A"
+                    ayaIndices.sorted().distinct().forEachIndexed { index, ayaIndxe ->
+                        if (prev == -222 || prev == ayaIndxe - 1 || index == ayaIndices.last()) {
+                            s += "\n\n"
+                        } else {
+                            s += "\u202A \n\n....\n\n \u202A"
+                        }
+
+
+                        s += "\u202B${at.first.get(ayaIndxe)}  {${
+                            java.lang.String.valueOf(
+                                nf.format(
+                                    ayaIndxe + 1
+                                )
+                            )
+                        }}\u202B"
+                        s += "\n\n"
+                        s += "\u202A" + (ayaIndxe + 1).toString() + ". " + at.second.get(ayaIndxe) + "\u202A"
+
+
+                        prev = ayaIndxe
+                    }
+
+                    s += "\n\n"
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+
+            }
+        }
+
+        return@withContext s
+
+
+    }
+
+    suspend fun saveForStoryBoard() = withContext(Dispatchers.IO) {
+
+        var file_edit_cut = File(filesDir, "edited_cut_aya_data_SPECIAL")
+        val bismi = getAyaths("1").first.first()
+
+        var ayaths: ArrayList<String> = arrayListOf()
+        var ayathsTrans: ArrayList<String> = arrayListOf()
+        var ayathNumbers: ArrayList<Int> = arrayListOf()
+        var isEnd: ArrayList<Boolean> = arrayListOf()
+        var chanpterNumbers: ArrayList<Int> = arrayListOf()
+
+
+        try {
+            val text = file_edit_cut.readText()
+            ayaths = ArrayList(text.split("||||")[0].split("||"))
+            ayathsTrans = ArrayList(text.split("||||")[1].split("||"))
+            ayathNumbers = ArrayList(text.split("||||")[2].split("||").map { it.toInt() })
+            isEnd = ArrayList(text.split("||||")[3].split("||").map { it.toBoolean() })
+            chanpterNumbers = ArrayList(text.split("||||")[4].split("||").map { it.toInt() })
+            if (text.isNullOrBlank()) throw Exception("")
+            if (ayaths.isEmpty()) throw Exception("")
+            println("bshdsbjdjasd Read from edited/save")
+        } catch (e: Exception) {
+
+
+        }
+
+
+        val a = pref.getString("selected", null)?.split("|")
+
+        a?.forEach {
+            try {
+                val chapterNumber = it.split(":").get(0).toInt()
+                val ayaIndices = it.split(":").get(1).split(",").map { it.toInt() }
+                val at = getAyaths(chapterNumber.toString())
+                ayaIndices.sorted().distinct().forEachIndexed { index, ayaIndxe ->
+                    ayaths.add(at.first.get(ayaIndxe))
+                    ayathsTrans.add(at.second.get(ayaIndxe))
+                    ayathNumbers.add(ayaIndxe + 1)
+                    isEnd.add(true)
+                    chanpterNumbers.add(chapterNumber)
+
+                }
+
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -137,8 +211,25 @@ class VersActivty : ComponentActivity() {
         }
 
 
-        return@withContext s
+        try {
 
+            file_edit_cut.writeText(
+                ayaths.joinToString("||")
+                        + "||||"
+                        + ayathsTrans.joinToString("||")
+                        + "||||"
+                        + ayathNumbers.joinToString("||")
+                        + "||||"
+                        + isEnd.joinToString("||")
+                        + "||||"
+                        + chanpterNumbers.joinToString("||")
+
+
+            )
+            println("bshdsbjdjasd  wrote")
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
 
     }
 
@@ -175,6 +266,45 @@ class VersActivty : ComponentActivity() {
         chapterNumber = intent.getIntExtra("chapterNumber", 1).toString()
         val chapterName = intent.getStringExtra("chapterName") ?: ""
 
+
+//
+//        var file_edit_cut = File(filesDir, "edited_cut_aya_data_SPECIAL")
+//        var text = file_edit_cut.readText()
+//        var chanpterNumbers: ArrayList<Int>
+//        var ayathNumbers: ArrayList<Int>
+//        ayathNumbers = ArrayList(text.split("||||")[2].split("||").map { it.toInt() })
+//        chanpterNumbers =
+//            ArrayList(text.split("||||")[4].split("||").map { it.toInt() })
+//
+//        pref.edit().remove("selected").commit()
+//       var aaaa= ayathNumbers.mapIndexed { index, i ->
+//            chanpterNumbers[index] to ayathNumbers[index]
+//        }.distinct().filter {
+//          true
+//        }.groupBy { it.first }.map {
+//            it.key to it.value.map { it.second.minus(1) }
+//        }.map {
+//            ""+it.first+":"+it.second.filter { it>=0 }.joinToString(",")
+//       }.joinToString("|")
+//
+//        println("aaaaaaaaa $aaaa")
+//
+//        pref.edit().putString("selected",aaaa).commit()
+//        lifecycleScope.launch {
+//            var s = getShareText()
+//            val sendIntent = Intent()
+//            sendIntent.action = Intent.ACTION_SEND
+//            sendIntent.putExtra(Intent.EXTRA_TEXT, s)
+//            sendIntent.type = "text/plain"
+//
+//            val shareIntent =
+//                Intent.createChooser(sendIntent, null)
+//            startActivity(shareIntent)
+//
+//        }
+//
+//
+//        return
 
         println(
             "intent EXTRAS " +
@@ -437,9 +567,46 @@ class VersActivty : ComponentActivity() {
                                 )
 
 
+                                if (BuildConfig.VERSION_CODE <= 16)
+                                    Image(
+                                        painter = painterResource(id = R.drawable.baseline_play_circle_24),
+                                        contentDescription = "Create Story Board for Reels",
+//                                    textAlign = TextAlign.Right,
+                                        modifier = Modifier
+                                            .padding(12.dp)
+                                            .clickable(
+                                                onClick = {
+                                                    if (selected.size + otherSuraAyas == 0) {
+                                                        Toast
+                                                            .makeText(
+                                                                this@VersActivty,
+                                                                "Long-press to select an aya ",
+                                                                Toast.LENGTH_SHORT
+                                                            )
+                                                            .show()
+                                                    } else {
+
+                                                        scope.launch {
+                                                            saveForStoryBoard()
+                                                            otherSuraAyas = 0
+                                                            selected.clear()
+                                                            pref
+                                                                .edit()
+                                                                .remove("selected")
+                                                                .apply()
+
+                                                        }
+
+
+                                                    }
+
+                                                },
+                                            ),
+                                    )
+
                                 Image(
                                     painter = painterResource(id = R.drawable.baseline_play_circle_24),
-                                    contentDescription = "Share Clipboard Content",
+                                    contentDescription = "create reels using screen record",
 //                                    textAlign = TextAlign.Right,
                                     modifier = Modifier
                                         .padding(12.dp)
@@ -449,8 +616,17 @@ class VersActivty : ComponentActivity() {
                                                     this@VersActivty,
                                                     PlayActivty::class.java
                                                 ).apply {
-                                                    putExtra("chapterNumber",intent.getIntExtra("chapterNumber",1))
-                                                    putExtra("chapterName", intent.getStringExtra("chapterName"))
+
+                                                    putExtra(
+                                                        "chapterNumber",
+                                                        intent.getIntExtra("chapterNumber", 1)
+                                                    )
+
+
+                                                    putExtra(
+                                                        "chapterName",
+                                                        intent.getStringExtra("chapterName")
+                                                    )
                                                 }
                                             )
 
@@ -478,11 +654,12 @@ class VersActivty : ComponentActivity() {
 
 
                                             if (selected.size + otherSuraAyas == 0) {
-                                                Toast.makeText(
-                                                    this@VersActivty,
-                                                    "Long-press to select an aya ",
-                                                    Toast.LENGTH_SHORT
-                                                )
+                                                Toast
+                                                    .makeText(
+                                                        this@VersActivty,
+                                                        "Long-press to select an aya ",
+                                                        Toast.LENGTH_SHORT
+                                                    )
                                                     .show()
                                             } else {
 
@@ -552,7 +729,7 @@ class VersActivty : ComponentActivity() {
 
 
                             ) {
-                                items( ayaths.size + 1) { indexPlus1 ->
+                                items(ayaths.size + 1) { indexPlus1 ->
 
                                     if (indexPlus1 == 0) {
                                         Text(
@@ -648,7 +825,10 @@ class VersActivty : ComponentActivity() {
                                                         .padding(8.dp)
                                                         .align(Alignment.End),
                                                     fontFamily = kfgqpc_uthmanic_script_hafs_regular,
-                                                    fontSize = (pref.getInt("font_size_arabic",20)).sp,
+                                                    fontSize = (pref.getInt(
+                                                        "font_size_arabic",
+                                                        20
+                                                    )).sp,
                                                     lineHeight = 1.4.em,
                                                     color = Color.White
 
@@ -663,7 +843,10 @@ class VersActivty : ComponentActivity() {
                                                     modifier = Modifier.padding(8.dp),
                                                     color = Color.White,
                                                     lineHeight = 1.4.em,
-                                                    fontSize = pref.getInt("font_size_malayalam",16).sp
+                                                    fontSize = pref.getInt(
+                                                        "font_size_malayalam",
+                                                        16
+                                                    ).sp
                                                 )
                                             }
 

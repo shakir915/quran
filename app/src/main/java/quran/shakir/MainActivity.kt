@@ -71,7 +71,7 @@ import java.util.regex.Matcher
 import java.util.regex.Pattern
 
 
-class MainActivity : ComponentActivity() {
+ class MainActivity : ComponentActivity() {
 
 
 
@@ -443,6 +443,26 @@ class MainActivity : ComponentActivity() {
                                     //fontFamily = kfgqpc_uthmanic_script_hafs_regular,
                                 )
 
+                                Image(
+                                    painter = painterResource(id = R.drawable.baseline_all_inbox_24),
+                                    contentDescription = "baseline_all_inbox_24",
+//                                    textAlign = TextAlign.Right,
+                                    modifier = Modifier
+                                        .align(alignment = Alignment.CenterVertically)
+                                        .padding(12.dp)
+                                        .alpha(1f)
+                                        .clickable {
+                                            startActivity(
+                                                Intent(
+                                                    this@MainActivity,
+                                                    LibraryActivity::class.java
+                                                )
+                                            )
+
+                                        },
+                                    //fontFamily = kfgqpc_uthmanic_script_hafs_regular,
+                                )
+
 
                             }
 
@@ -546,7 +566,9 @@ class MainActivity : ComponentActivity() {
                                     LazyColumn(modifier = Modifier.fillMaxSize()) {
                                         items(showList.size) { index ->
                                             Row(modifier = Modifier
-                                                .defaultMinSize(minWidth = 150.dp)
+                                                .fillMaxSize()
+                                                .background(Color.White.copy(alpha = if (index%2==0) .03f else .00f))
+//                                                .defaultMinSize(minWidth = 150.dp)
                                                 .clickable {
                                                     if (!superSearch)
                                                         startActivity(
