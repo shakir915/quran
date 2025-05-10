@@ -231,15 +231,17 @@ class LibraryPageActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         setContent {
             QuranTheme {
-                var pageNumber by remember { mutableStateOf(0) }
+
                 var content by remember { mutableStateOf<String?>(null) }
                 val scope = rememberCoroutineScope()
                 var isLoading by remember { mutableStateOf(false) }
                 var isSource by remember { mutableStateOf(false) }
                 var isTranslation by remember { mutableStateOf(false) }
                 val file = File(intent.getStringExtra("file"));
+                var pageNumber by remember { mutableStateOf(pref.getInt("pageNumber_${file.name}",0)) }
                 val scrollState = rememberScrollState()
 
 
@@ -253,6 +255,7 @@ class LibraryPageActivity : ComponentActivity() {
                     scope.launch {
                         isLoading=true;
                         pageNumber+=i
+                        pref.edit().putInt("pageNumber_${file.name}",pageNumber).apply()
                         withContext(Dispatchers.IO) {
                             if (isTranslation) {
                                 val loadAPage = loadAPage(file,pageNumber)
@@ -496,50 +499,6 @@ fun htmlToAnnotatedString(html: String): AnnotatedString {
     }
 }
 
-
-
-
-
-
-@Serializable
-data class GeminiResponse(
-    val candidates: List<Candidate>,
-    val usageMetadata: UsageMetadata? = null,
-    val modelVersion: String? = null
-)
-
-@Serializable
-data class Candidate(
-    val content: Content,
-    val finishReason: String? = null,
-    val avgLogprobs: Double? = null
-)
-
-@Serializable
-data class Content(
-    val parts: List<Part>,
-    val role: String? = null
-)
-
-@Serializable
-data class Part(
-    val text: String
-)
-
-@Serializable
-data class UsageMetadata(
-    val promptTokenCount: Int,
-    val candidatesTokenCount: Int,
-    val totalTokenCount: Int,
-    val promptTokensDetails: List<TokenDetail>? = null,
-    val candidatesTokensDetails: List<TokenDetail>? = null
-)
-
-@Serializable
-data class TokenDetail(
-    val modality: String,
-    val tokenCount: Int
-)
 
 
 
