@@ -1,7 +1,6 @@
 package quran.shakir
 
 import android.content.ContentValues
-import kotlinx.serialization.Serializable
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -29,15 +28,19 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.core.text.HtmlCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -85,26 +88,8 @@ class LibraryPageActivity : ComponentActivity() {
         var resp: String="No Response"
 
 
-        var dbFile=File(appInstance.filesDir,"trans_malayalam_db_v2")
-        if (!dbFile.exists()) {
-            dbFile.createNewFile() // Create the file if it doesn't exist
-        }
-        val db = SQLiteDatabase.openDatabase(dbFile.absolutePath,
-            null,
-            SQLiteDatabase.OPEN_READWRITE
-        )
-
-        // Create table
-        try {
-            db.execSQL("CREATE TABLE IF NOT EXISTS trans_malayalam_table (fileName TEXT, page INTEGER, content TEXT)")
-            println("Table trans_malayalam_table created successfully.")
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-
-
         if(!force) {
-            val cursor = db.rawQuery(
+            val cursor =  MyDb.db().rawQuery(
                 "SELECT content FROM trans_malayalam_table WHERE fileName = ? AND page = ?",
                 arrayOf(file.name, pageNumber.toString())
             )
@@ -119,7 +104,7 @@ class LibraryPageActivity : ComponentActivity() {
 
         isOnLoading=true
         try {
-            val apiKey = "AIzaSyB0H16kaQ9_F13n_95xB91-UXSx_LtwsR0" // Replace with your actual API key
+            val apiKey = geminiAPIKey() // Replace with your actual API key
             val endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=$apiKey"
             val escaped = content
                 ?.replace("\\", "\\\\")
@@ -156,7 +141,7 @@ class LibraryPageActivity : ComponentActivity() {
                     put("page", pageNumber)
                     put("content", s)
                 }
-                val rowsAffected = db.update(
+                val rowsAffected =  MyDb.db().update(
                     "trans_malayalam_table",
                     values,
                     "fileName = ? AND page = ?",
@@ -164,7 +149,7 @@ class LibraryPageActivity : ComponentActivity() {
                 )
                 println("rowsAffected ${rowsAffected}")
                 if (rowsAffected == 0) {
-                    val newRowId = db.insert("trans_malayalam_table", null, values)
+                    val newRowId =  MyDb.db().insert("trans_malayalam_table", null, values)
                     println("newRowId ${newRowId}")
                 }
 
@@ -173,10 +158,10 @@ class LibraryPageActivity : ComponentActivity() {
 
             }
             if(retry)
-            GlobalScope.launch {
+             GlobalScope.launch {
                 delay(3000L)
                 if(!isOnLoading){
-                    val cursor = db.rawQuery(
+                    val cursor =  MyDb.db().rawQuery(
                         "SELECT content FROM trans_malayalam_table WHERE fileName = ? AND page = ?",
                         arrayOf(file.name, pageNumber.plus(1).toString())
                     )
@@ -235,18 +220,46 @@ class LibraryPageActivity : ComponentActivity() {
         setContent {
             QuranTheme {
 
+                val lifecycleOwner = LocalLifecycleOwner.current
                 var content by remember { mutableStateOf<String?>(null) }
                 val scope = rememberCoroutineScope()
                 var isLoading by remember { mutableStateOf(false) }
                 var isSource by remember { mutableStateOf(false) }
-                var isTranslation by remember { mutableStateOf(false) }
+
                 val file = File(intent.getStringExtra("file"));
-                var pageNumber by remember { mutableStateOf(pref.getInt("pageNumber_${file.name}",0)) }
+                val prevPageState = MyDb.getPageState(file.name)
+
+                var pageNumber by remember { mutableStateOf(prevPageState?.page?:0) }
+                var isTranslation by remember { mutableStateOf(prevPageState?.isTranslation?:false) }
                 val scrollState = rememberScrollState()
 
 
+
+
+
+                DisposableEffect(lifecycleOwner) {
+                    val observer = LifecycleEventObserver { _, event ->
+                        when (event) {
+                            Lifecycle.Event.ON_PAUSE -> {
+                                MyDb.setPageState(file.name,pageNumber,isTranslation,scrollState.value)
+                            }
+                            Lifecycle.Event.ON_RESUME -> {
+
+                            }
+                            else -> {}
+                        }
+                    }
+                    lifecycleOwner.lifecycle.addObserver(observer)
+                    onDispose {
+                        lifecycleOwner.lifecycle.removeObserver(observer)
+                    }
+                }
+
                 LaunchedEffect(content) {
-                    scrollState.scrollTo(0)
+                    if (content?.isNotBlank()==true){
+                        scrollState.scrollTo(prevPageState?.scrollState?:0)
+                        MyDb.setPageState(file.name,pageNumber,isTranslation,0)
+                    }
                 }
 
 
@@ -255,7 +268,6 @@ class LibraryPageActivity : ComponentActivity() {
                     scope.launch {
                         isLoading=true;
                         pageNumber+=i
-                        pref.edit().putInt("pageNumber_${file.name}",pageNumber).apply()
                         withContext(Dispatchers.IO) {
                             if (isTranslation) {
                                 val loadAPage = loadAPage(file,pageNumber)
@@ -271,7 +283,7 @@ class LibraryPageActivity : ComponentActivity() {
 
                 LaunchedEffect("") {
                     isLoading=true;
-                    content=loadAPage(file, pageNumber)
+                    nextpage(0)
                     isLoading=false;
 
                 }
@@ -295,6 +307,7 @@ class LibraryPageActivity : ComponentActivity() {
                                                 val loadAPage = loadAPage(file, pageNumber)
                                                 content= translate(loadAPage, pageNumber, file)
                                                 isTranslation=true;
+
                                             }
                                             isLoading=false;
                                         }
@@ -498,6 +511,17 @@ fun htmlToAnnotatedString(html: String): AnnotatedString {
 
     }
 }
+
+
+fun geminiAPIKey(): String {
+    var a=AESCrypt.decrypt("pyLAT1RThGaIGOW+34Al0y5YxENM7CPQo9pvneLtF3icYuOY86BhBBIXaQPAqfBfoKNX6szjT2BH\n" +
+            "KeVi0YMcDGF3v0wMNWBaXKW/TRlSteviKkeQQMYoCamKbzDaTdwQT1zc5o7MFA94W+EzeAj/ve9V\n" +
+            "cE3+Okb2jKS3IFF141AV2au9aQ2GK4k8rJwYX9Va","8129625121")
+   return AESCrypt.decrypt(a,"8129625121")
+}
+
+
+
 
 
 
