@@ -97,6 +97,7 @@ class LibraryPageActivity : ComponentActivity() {
                 var content = cursor.getString(cursor.getColumnIndexOrThrow("content"))
                 if (content.isNotBlank()) {
                     cursor.close()
+                    preLoad(file,pageNumber)
                     return content
                 }
             }
@@ -158,24 +159,8 @@ class LibraryPageActivity : ComponentActivity() {
 
             }
             if(retry)
-             GlobalScope.launch {
-                delay(3000L)
-                if(!isOnLoading){
-                    val cursor =  MyDb.db().rawQuery(
-                        "SELECT content FROM trans_malayalam_table WHERE fileName = ? AND page = ?",
-                        arrayOf(file.name, pageNumber.plus(1).toString())
-                    )
-                    if (cursor.moveToFirst()) {
-                        var content = cursor.getString(cursor.getColumnIndexOrThrow("content"))
-                        if (content.isNotBlank()){
-                            cursor.close()
-                            return@launch
-                        }
-                    }
-                    translate(loadAPage(file,pageNumber+1),pageNumber+1,file,retry = false)
+                preLoad(file,pageNumber)
 
-                }
-            }
 
             isOnLoading=false;
             return  s;
@@ -189,6 +174,27 @@ class LibraryPageActivity : ComponentActivity() {
 
 
 
+    }
+
+    fun preLoad(file: File, pageNumber: Int) {
+        GlobalScope.launch {
+            delay(3000L)
+            if(!isOnLoading){
+                val cursor =  MyDb.db().rawQuery(
+                    "SELECT content FROM trans_malayalam_table WHERE fileName = ? AND page = ?",
+                    arrayOf(file.name, pageNumber.plus(1).toString())
+                )
+                if (cursor.moveToFirst()) {
+                    var content = cursor.getString(cursor.getColumnIndexOrThrow("content"))
+                    if (content.isNotBlank()){
+                        cursor.close()
+                        return@launch
+                    }
+                }
+                translate(loadAPage(file,pageNumber+1),pageNumber+1,file,retry = false)
+
+            }
+        }
     }
 
 
